@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Сапер</title>
+</head>
+<body>
+<script type="text/javascript">
+
+let row = 5; //сторона поля
+let countMine = 1; //кол-во мин
+let width = (row*20)+(row*2); //Расчет ширины поля
+let mines = []//координаты мин
+let fieldArr = [];//матрица поля
+let arr = [-1, 0, 1];//массив для прохода по соседним от мин ячейкам
+
+/*функция-генератор координат мин*/
+function getCoordinat(max) {
+    let x = Math.floor(Math.random() * (Math.floor(max)));
+    let y = Math.floor(Math.random() * (Math.floor(max)));
+    return x+':'+y;
+}
+
+/*Отрисовка поля*/
+let cont = document.createElement('div');
+cont.className = "container";
+cont.setAttribute("style","width:"+width+"px");
+document.body.append(cont);
+for (let i = 0; i <= row-1; i++){
+    fieldArr[i] = [];
+    for (let j = 0; j <= row-1;j++){
+        fieldArr[i][j] = 0;
+        let cel = document.createElement('div');
+        cel.className = "cell";
+        cel.setAttribute('row', i)
+        cel.setAttribute('col', j)
+        cont.append(cel);
+    }
+}
+/*Формирование массива с координатами мин*/
+for(let i = 0; i < countMine; i++){
+    let minesCoord = getCoordinat(countMine);
+    while(mines.indexOf(minesCoord) != -1){//исключаем повторы
+        minesCoord = getCoordinat(countMine);
+    }
+    mines.push(minesCoord);
+}
+
+/*Расстановка мин и подсказок*/
+for (let i = 0; i <= row-1; i++){
+    for (let j = 0; j <= row-1;j++){
+        for (m in mines){
+            if(i+":"+j == mines[m]){
+                fieldArr[i][j] = 'm';
+                try{//На граничных значениях вылетает ошибка
+                    for (di in arr){
+                        for (dj in arr){
+                            if (i+arr[di] >= 0 && j+arr[dj] >= 0){
+                                if(fieldArr[i+arr[di]][j+arr[dj]] != 'm'){
+                                    fieldArr[i+arr[di]][j+arr[dj]] += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+                catch(e){
+                }
+            }
+        }
+    }
+}
+
+/*Получение ДОМ элеимента по координатам*/
+function getElementByCoordinat(rowCoordinat, colCoordinat) {
+    let cellCollection = document.getElementsByClassName('cell');
+    for(let i = 0; i< cellCollection.length; i++){
+        if(cellCollection[i].attributes.row.value == rowCoordinat && cellCollection[i].attributes.col.value == colCoordinat){
+            return cellCollection[i];
+        }
+    }
+}
+function checkCell(row,col) {
+    let count = [-1,0,1];
+    let ckeckingElement = getElementByCoordinat(row,col);
+    let cellValue = fieldArr[row][col];
+    ckeckingElement.innerHTML = cellValue;
+    if (cellValue == 'm') {
+        ckeckingElement.classList.add('red');
+    }
+    if (cellValue > 0) {
+        ckeckingElement.classList.add('white');
+    }
+    if (cellValue == 0) {
+        ckeckingElement.classList.add('white');
+        for (var i = count.length - 1; i >= 0; i--) {
+            for (var j = count.length - 1; j >= 0; i--) {
+                console.log(1);
+            }
+        }
+    }
+
+}
+
+// console.log(checkCell(1,1).value);
+/*Обработка нажатия*/
+let btn = document.querySelector('.container');
+btn.onclick = function($e) {
+    let thisCell = $e.target;
+    let row = Number(thisCell.getAttribute('row'));
+    let col = Number(thisCell.getAttribute('col'));
+    try{ // отлавливаю ошибку при нажатии между ячейками
+        checkCell(row,col)
+    }
+    catch(e){}
+}
+
+
+
+</script>
+<style type="text/css">
+    .container{
+        width: 100px;
+        display: flex;
+        flex-wrap: wrap;
+    }
+    .cell{
+        background-color: lightgray;
+        width: 18px;
+        border: solid 1px;
+        height: 18px;
+        margin: 1px;
+        cursor: cell;
+    }
+    .cell:hover{
+        background-color: gray;
+    }
+    .red{
+        background-color: red;
+    }
+    .white{
+        background-color: white;
+    }
+    .green{
+        background-color: green;
+    }
+</style>
+</body>
+</html>
