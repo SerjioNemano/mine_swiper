@@ -2,17 +2,28 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Сапер</title>
+    <title>Document</title>
 </head>
 <body>
-<script type="text/javascript">
 
-let row = 5; //сторона поля
-let countMine = 1; //кол-во мин
-let width = (row*20)+(row*2); //Расчет ширины поля
-let mines = []//координаты мин
-let fieldArr = [];//матрица поля
-let arr = [-1, 0, 1];//массив для прохода по соседним от мин ячейкам
+<script>
+/*Задаем границы поля*/
+let fieldLength = 10;
+
+/*Расчет ширины поля*/
+let width = (fieldLength*20)+(fieldLength*4); 
+
+/*Задаем пустое поле*/
+let mineField = [];
+
+/*Задаем кол -во мин*/
+let mineAmount = 14;
+
+/*Пустой массив для координат мин*/
+let minesCoordinats = [];
+
+/*Пустой массив для координат пустых полей*/
+let mineFree = [];
 
 /*функция-генератор координат мин*/
 function getCoordinat(max) {
@@ -20,116 +31,184 @@ function getCoordinat(max) {
     let y = Math.floor(Math.random() * (Math.floor(max)));
     return x+':'+y;
 }
-
-/*Отрисовка поля*/
-let cont = document.createElement('div');
-cont.className = "container";
-cont.setAttribute("style","width:"+width+"px");
-document.body.append(cont);
-for (let i = 0; i <= row-1; i++){
-    fieldArr[i] = [];
-    for (let j = 0; j <= row-1;j++){
-        fieldArr[i][j] = 0;
-        let cel = document.createElement('div');
-        cel.className = "cell";
-        cel.setAttribute('row', i)
-        cel.setAttribute('col', j)
-        cont.append(cel);
+/*функция разбивает строку с координатами и возвращает объект*/
+/*по ключу x координата x */
+/*по ключу y координата y*/
+function returnCoordinats(arr) {
+    let coordinats = arr.split(':')
+    return {
+        x:Number(coordinats[0]),
+        y:Number(coordinats[1]),
     }
 }
-/*Формирование массива с координатами мин*/
-for(let i = 0; i < countMine; i++){
-    let minesCoord = getCoordinat(countMine);
-    while(mines.indexOf(minesCoord) != -1){//исключаем повторы
-        minesCoord = getCoordinat(countMine);
-    }
-    mines.push(minesCoord);
-}
 
-/*Расстановка мин и подсказок*/
-for (let i = 0; i <= row-1; i++){
-    for (let j = 0; j <= row-1;j++){
-        for (m in mines){
-            if(i+":"+j == mines[m]){
-                fieldArr[i][j] = 'm';
-                try{//На граничных значениях вылетает ошибка
-                    for (di in arr){
-                        for (dj in arr){
-                            if (i+arr[di] >= 0 && j+arr[dj] >= 0){
-                                if(fieldArr[i+arr[di]][j+arr[dj]] != 'm'){
-                                    fieldArr[i+arr[di]][j+arr[dj]] += 1;
-                                }
-                            }
-                        }
-                    }
+/*ищем соседей. Возвращает массив с координатами соседей*/
+function findNeighbors(x,y) {
+    let neighborsArr = [];
+    let arr = [-1,0,1];
+    let neighborsX = ''
+    let neighborsY = ''
+    for (let i = 0; i < arr.length; i++){
+        for (let j = 0; j < arr.length; j++){
+            neighborsX = Number(x) + arr[i];
+            neighborsY = Number(y) + arr[j];
+            if (neighborsX >=0 && neighborsX < fieldLength && neighborsY >=0 && neighborsY < fieldLength) {
+                let neighborCoordinats = neighborsX+':'+neighborsY;
+                if (neighborCoordinats != x+':'+y) {
+                    neighborsArr.push(neighborCoordinats)
                 }
-                catch(e){
+            }
+        }
+    }
+    return neighborsArr;
+}
+
+/*Расставляем подсказки*/
+function hints(mineField) {
+    for (let i = 0; i < mineField.length; i++){
+        for (let j = 0; j < mineField.length; j++){
+            if (mineField[i][j] == 'm'){
+                let neighbors = findNeighbors(i,j)
+                for(let x = 0; x < neighbors.length; x++){
+                    let neighborsCoordinats = returnCoordinats(neighbors[x])
+                    let row = neighborsCoordinats.x;
+                    let col = neighborsCoordinats.y;
+                    if (mineField[row][col] != 'm') {
+                        mineField[row][col] ++;
+                    }
                 }
             }
         }
     }
 }
 
+/*Формируем массив с координатами мин*/
+for(let i = 0; i < mineAmount; i++){
+    let mine = getCoordinat(fieldLength);
+
+    while(minesCoordinats.indexOf(mine) !== -1){//исключаем повторы
+        mine = getCoordinat(fieldLength);
+    }
+    minesCoordinats.push(mine);
+
+}
+/*Массив координат флагов*/
+let flags = []
+
+/*рисуем поле, ставим мины*/
+let field = document.createElement('div');
+field.className = "field";
+field.setAttribute("style","width:"+width+"px");
+document.body.append(field);
+for (let i = 0; i < fieldLength; i++){
+    mineField[i] = [];
+    for (let j = 0; j < fieldLength; j++){
+        if (minesCoordinats.indexOf(i+':'+j) != -1) {
+            mineField[i][j] = 'm';
+        }
+        else{
+            mineField[i][j] = 0;
+        }
+        let cell = document.createElement('div');
+        cell.className = "cell";
+        cell.setAttribute('row', i)
+        cell.setAttribute('col', j)
+        field.append(cell);
+    }
+}
+
+/*Ставим и убираем флаг*/
+function toggleFlag(elementDOM) {
+    let el = elementDOM;
+    flags.length < mineAmount ? el.classList.toggle('flag') :  el.classList.remove('flag')
+        let row = el.getAttribute('row');
+        let col = el.getAttribute('col');
+    if (el.matches('.flag') ) {
+        flags.push(row+':'+col)
+    } else {
+        var newArray = flags.filter(element =>  element != row+':'+col)
+        flags = [];
+        flags = newArray
+    }
+    if (flags.length == mineAmount) {
+        let x = 0;
+        for (let i = 0; i < flags.length; i++) {
+            if (minesCoordinats.indexOf(flags[i]) !== -1) {
+                x++
+            }
+        }
+        if (x == mineAmount) {
+            alert('Победа');
+            return false;
+        }
+    }
+}
+console.log(minesCoordinats);
+/*Расставляем подсказки*/
+hints(mineField)
+
+/*Обработка нажатия*/
+let btn = document.querySelector('.field');
+btn.oncontextmenu= function(){
+    return false
+}
+btn.onmousedown = function($e) {
+    if ($e.target.matches('.cell')) {// исключение нажатия между ячейками
+        let thisCell = $e.target;
+        let row = Number(thisCell.getAttribute('row'));
+        let col = Number(thisCell.getAttribute('col'));
+        $e.which == 1 ? checkCell(row,col) : toggleFlag(thisCell)
+    }
+}
 /*Получение ДОМ элеимента по координатам*/
 function getElementByCoordinat(rowCoordinat, colCoordinat) {
     let cellCollection = document.getElementsByClassName('cell');
     for(let i = 0; i< cellCollection.length; i++){
-        if(cellCollection[i].attributes.row.value == rowCoordinat && cellCollection[i].attributes.col.value == colCoordinat){
+        if ( cellCollection[i].attributes.row.value == rowCoordinat && 
+             cellCollection[i].attributes.col.value == colCoordinat ) {
             return cellCollection[i];
         }
     }
 }
 function checkCell(row,col) {
-    let count = [-1,0,1];
-    let ckeckingElement = getElementByCoordinat(row,col);
-    let cellValue = fieldArr[row][col];
-    ckeckingElement.innerHTML = cellValue;
-    if (cellValue == 'm') {
-        ckeckingElement.classList.add('red');
+    let thisCell = getElementByCoordinat(row,col);
+    if (thisCell.matches('.flag')) {
+        return false
     }
-    if (cellValue > 0) {
-        ckeckingElement.classList.add('white');
+    thisCell.innerHTML = mineField[row][col];
+    if(mineField[row][col] == 'm'){
+        thisCell.classList.add('red');
     }
-    if (cellValue == 0) {
-        ckeckingElement.classList.add('white');
-        for (var i = count.length - 1; i >= 0; i--) {
-            for (var j = count.length - 1; j >= 0; i--) {
-                console.log(1);
+    if(mineField[row][col] > 0 && mineField[row][col] != 'm'){
+        thisCell.classList.add('white');
+    }
+    if(mineField[row][col] == 0){
+        mineFree.push(row+':'+col)
+        thisCell.classList.add('white');
+        let neighbors = findNeighbors(row,col);
+        for(let i = 0; i < neighbors.length; i++){
+            let neighborsCoordinats = returnCoordinats(neighbors[i])
+            let nrow = neighborsCoordinats.x;
+            let ncol = neighborsCoordinats.y;
+            if (mineFree.indexOf(neighbors[i]) === -1) {
+                checkCell(nrow,ncol)
             }
         }
     }
-
 }
-
-// console.log(checkCell(1,1).value);
-/*Обработка нажатия*/
-let btn = document.querySelector('.container');
-btn.onclick = function($e) {
-    let thisCell = $e.target;
-    let row = Number(thisCell.getAttribute('row'));
-    let col = Number(thisCell.getAttribute('col'));
-    try{ // отлавливаю ошибку при нажатии между ячейками
-        checkCell(row,col)
-    }
-    catch(e){}
-}
-
-
 
 </script>
-<style type="text/css">
-    .container{
-        width: 100px;
-        display: flex;
-        flex-wrap: wrap;
+<style>
+    .field{
+        display: inline-block;
     }
     .cell{
+        float: left;
+        height: 20px;
+        width: 20px;
         background-color: lightgray;
-        width: 18px;
-        border: solid 1px;
-        height: 18px;
         margin: 1px;
-        cursor: cell;
+        border: solid black 1px;
     }
     .cell:hover{
         background-color: gray;
@@ -142,6 +221,12 @@ btn.onclick = function($e) {
     }
     .green{
         background-color: green;
+    }
+    .flag::before{
+        content: "🚩";
+        transform: rotate(-18deg);
+        margin-left: 2px;
+        position: absolute;
     }
 </style>
 </body>
