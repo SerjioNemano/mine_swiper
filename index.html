@@ -5,7 +5,7 @@
     <title>Document</title>
 </head>
 <body>
-
+    <div class="timer"></div>
 <script>
 /*Задаем границы поля*/
 let fieldLength = 10;
@@ -143,10 +143,23 @@ function toggleFlag(elementDOM) {
         }
     }
 }
-console.log(minesCoordinats);
+// console.log(minesCoordinats);
 /*Расставляем подсказки*/
 hints(mineField)
 
+    let sec = 0;
+/*таймер*/
+function timer(sec) {
+    let domTimer=document.getElementsByClassName('timer')[0];
+    let timerId = setTimeout(function tick() {
+        sec++
+        domTimer.innerHTML = sec
+        if (sec == 5) {return false}
+        timerId = setTimeout(tick, 1000); // (*)
+    }, 1000);
+}
+timer(sec)
+        console.log(sec)
 /*Обработка нажатия*/
 let btn = document.querySelector('.field');
 btn.oncontextmenu= function(){
@@ -177,7 +190,8 @@ function checkCell(row,col) {
     }
     thisCell.innerHTML = mineField[row][col];
     if(mineField[row][col] == 'm'){
-        thisCell.classList.add('red');
+        thisCell.classList.add('white');
+        thisCell.classList.add('bomb');
     }
     if(mineField[row][col] > 0 && mineField[row][col] != 'm'){
         thisCell.classList.add('white');
@@ -227,6 +241,9 @@ function checkCell(row,col) {
         transform: rotate(-18deg);
         margin-left: 2px;
         position: absolute;
+    }
+    .bomb::before{
+        content: "💣";
     }
 </style>
 </body>
